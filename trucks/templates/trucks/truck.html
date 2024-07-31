@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% load static %}
+{% block extra_head %}
+    <style>
+        .poppins-regular {
+            font-family: "Poppins", sans-serif;
+            font-weight: 400;
+            font-style: normal;
+        }
+
+        .truck-item {
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .truck-item:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        .truck-item img {
+            transition: transform 0.3s;
+        }
+
+        .truck-item:hover img {
+            transform: scale(1.05);
+        }
+        .rating-stars input[type="radio"] {
+            display: none;
+        }
+
+        .rating-stars label {
+            font-size: 2em;
+            color: gray;
+            cursor: pointer;
+        }
+
+        .rating-stars input[type="radio"]:checked ~ label {
+            color:gold;
+        }
+    </style>
+    <script>
+        const csrfToken = "{{ csrf_token }}";  // Add CSRF token as a global variable
+    </script>
+{% endblock %}
+{% block body_block %}
+
+<div class="m-0 p-0 w-screen h-screen flex flex-col poppins-regular bg-[#f5f5f5]">
+    <div class="flex flex-1 overflow-auto">
+        <div class="w-1/2 h-full flex items-center p-8 bg-[#095358]">
+            <img src="{{ truck.image }}" alt="{{ truck.name }}" class="rounded-lg w-full max-h-full bg-white">
+        </div>
+        <div class="w-1/2 h-full overflow-y-auto p-8 flex flex-col items-start gap-y-4 bg-[#095358]"
+            style="scrollbar-width: none;">
+            <div class="flex items-center gap-x-6 justify-between w-full mb-2">
+                <div class="font-semibold text-3xl text-gray-100 leading-none pb-2 border-b-2 border-b-gray-300">{{ truck.name }}</div>
+                <div class="px-4 py-2 rounded-md bg-[#0008] text-gray-50 cursor-pointer" onclick="history.back()">Go Back</div>
+            </div>
+            <div class="grid grid-cols-2 gap-4 w-full">
+                <div class="flex flex-col gap-y-1 bg-[#0008] rounded-md px-4 py-2 w-full">
+                    <div class="text-gray-300 w-full">Company</div>
+                    <div class="text-lg font-medium text-gray-100 w-full">{{ truck.companyName }}</div>
+                </div>
+                {% if truck.get_modelType_display %}
+                <div class="flex flex-col gap-y-1 bg-[#0008] rounded-md px-4 py-2 w-full">
+                    <div class="text-gray-300 w-full">Type</div>
+                    <div class="text-lg font-medium text-gray-100 w-full">{{ truck.get_modelType_display }}</div>
+                </div>
+                {% else %}
+                <div class="flex flex-col gap-y-1 bg-[#0008] rounded-md px-4 py-2 w-full">
+                    <div class="text-gray-300 w-full">Type</div>
+                    <div class="text-lg font-medium text-gray-100 w-full">{{ truck.modelType }}</div>
+                </div>
+                {% endif %}
+            </div>
+            <div class="grid grid-cols-2 gap-4 w-full">
+                <div class="flex flex-col gap-y-1 bg-[#0008] rounded-md px-4 py-2 w-full">
+                    <div class="text-gray-300">Year</div>
+                    <div class="text-lg font-medium text-gray-100">{{ truck.manufacturingYear }}</div>
+                </div>
+                <div class="flex flex-col gap-y-1 bg-[#0008] rounded-md px-4 py-2 w-full">
+                    <div class="text-gray-300">Price</div>
+                    <div class="text-lg font-medium text-gray-100">${{ truck.price }}</div>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4 w-full">
+                {% if truck.isNew %}
+                <div class="flex flex-col gap-y-1 bg-[#0008] rounded-md px-4 py-2 w-full">
+                    <div class="text-gray-300">Condition</div>
+                    <div class="text-lg font-medium text-gray-100">New</div>
+                </div>
+                {% else %}
+                <div class="flex flex-col gap-y-1 bg-[#0008] rounded-md px-4 py-2 w-full">
+                    <div class="text-gray-300">Condition</div>
+                    <div class="text-lg font-medium text-gray-100">Used</div>
+                </div>
+                {% endif %}
+                <div class="flex flex-col gap-y-1 bg-[#0008] rounded-md px-4 py-2 w-full">
+                    <div class="text-gray-300">Posted</div>
+                    <div class="text-lg font-medium text-gray-100">{{ truck.createdAt | timesince }} ago</div>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 bg-[#0008] gap-4 rounded-md px-4 pt-2 pb-4 w-full">
+                <div class="text-gray-300">Description</div>
+                <div class="text-lg font-medium text-gray-100">{{ truck.description }}</div>
+            </div>
+            {% if user.is_authenticated and truck.user.username|safe != user.username %}
+                <div class="flex items-center justify-end gap-3 w-full">
+                    {% comment %} <button class="bg-[#0008] transition text-white py-2 px-4 rounded">Message Owner</button> {% endcomment %}
+                    <!-- trucks.html -->
+                    <a href="{% url 'trucks:purchase_truck' truck.id %}" class="bg-[#0008] transition text-white py-2 px-4 rounded inline-block">Purchase</a>
+                </div>
+            {% endif %}
+            <div>
+            <h3 class="text-xl font-semibold" style="color:yellow">Rate this truck</h3>
+            {% if user.is_authenticated %}
+                {% if user_rating %}
+                    <p style="color: white">You have already rated this truck: {{ user_rating.rating }} stars</p>
+                {% else %}
+                    <form method="post" action="{% url 'trucks:rate_truck' truck.id %}">
+                            {% csrf_token %}
+                            <div id="rating-stars" class="flex gap-1">
+                                {% for i in "12345" %}
+                                    <label>
+                                        <input type="radio" name="rating" value="{{ i }}" class="hidden">
+                                        <span class="text-2xl cursor-pointer" style="color: white;">★</span>
+                                    </label>
+                                {% endfor %}
+                            </div>
+                            <button type="submit" class="mt-2 bg-blue-500 text-white py-2 px-4 rounded">Submit Rate</button>
+                        </form>
+                {% endif %}
+            {% else %}
+                <p>You must be <a href="{% url 'login' %}">logged in</a> to rate.</p>
+            {% endif %}
+        </div>
+
+        <div>
+{#            <h3 class="text-xl font-semibold">Average Rating</h3>#}
+{#            <p>{{ truck.ratings.aggregate(Avg('rating'))['rating__avg']|default:"No ratings yet" }}</p>#}
+{#            <p>{{ vehicle.average_rating|default:"No ratings yet" }}</p>#}
+        </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

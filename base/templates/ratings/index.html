@@ -1,0 +1,35 @@
+<!-- base/templates/ratings/index.html -->
+{% extends "base.html" %}
+{% load static %}
+{% block extra_head %}
+    <style>
+        .poppins-regular {
+            font-family: "Poppins", sans-serif;
+            font-weight: 400;
+            font-style: normal;
+        }
+
+        .rating-item {
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .rating-item:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+        }
+    </style>
+{% endblock %}
+{% block content %}
+<div class="poppins-regular">
+    <h2 class="text-center">Ratings</h2>
+    <div class="rating-list">
+        {% for rating in ratings %}
+            <div class="rating-item p-4 bg-white rounded-lg shadow mb-4">
+                <h3>{{ rating.user.username }} - {{ rating.rating }} Stars</h3>
+                <p>{{ rating.comment }}</p>
+                <small>Posted {{ rating.date_created|timesince }} ago</small>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
